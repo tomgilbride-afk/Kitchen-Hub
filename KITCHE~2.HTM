@@ -1,0 +1,2596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kitchen Hub</title>
+<!--
+  ============================================================
+  KITCHEN HUB TEMPLATE — READ THIS BEFORE USE
+  ============================================================
+  1. Open README.md (same folder) for full setup instructions —
+     it walks through creating your own free Google + Microsoft
+     sign-in apps, which this page needs for real calendar/to-do data.
+  2. In the <script> section below, find the block labeled
+     "EDIT THIS: HOUSEHOLD CONFIG" and fill in your household name,
+     city, family members, and (optionally) sports teams.
+  3. This file must be served over http:// or https:// — even just
+     locally. Double-clicking it to open as a file:// page will NOT
+     work, because Google/Microsoft sign-in blocks that. README.md
+     covers the easiest ways to serve it.
+  ============================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --iron: #1C1A17;
+    --panel: #2A2622;
+    --panel-hi: #34302A;
+    --brass: #C9A227;
+    --brass-dim: #7A6420;
+    --sage: #5C7A68;
+    --parchment: #F2EDE4;
+    --muted: #948C7E;
+    --hairline: #3D3830;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--iron);
+    color: var(--parchment);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+  }
+
+  body {
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(201,162,39,0.05), transparent 50%),
+      radial-gradient(ellipse at 100% 100%, rgba(92,122,104,0.06), transparent 50%);
+  }
+
+  .frame {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    padding: 28px 36px 32px;
+    gap: 22px;
+  }
+
+  /* ---------- TOP BAR ---------- */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--hairline);
+    padding-bottom: 16px;
+  }
+
+  .house-mark {
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.18em;
+    font-size: 13px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .house-mark span { color: var(--brass); }
+
+  .today-label {
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.1em;
+    font-size: 13px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .notes-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 38px;
+    box-sizing: border-box;
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--parchment);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+
+  .notes-btn:hover, .notes-btn:active {
+    border-color: var(--brass);
+  }
+
+  .notes-count {
+    background: var(--brass);
+    color: var(--iron);
+    font-weight: 600;
+    font-size: 11px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+  }
+
+  .notes-count.zero { display: none; }
+
+  .topbar-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .view-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    box-sizing: border-box;
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .view-tab.active {
+    border-color: var(--brass);
+    color: var(--brass);
+  }
+
+  .main.hidden-view { display: none; }
+
+  /* ---------- CAMERAS VIEW ---------- */
+  .camera-grid {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .camera-grid.active { display: grid; }
+
+  /* ---------- DINNER (embedded meal planner) ---------- */
+  .iframe-view { display: none; height: 100%; flex-direction: column; }
+  .iframe-view.active { display: flex; }
+  .iframe-view iframe { flex: 1; width: 100%; border: none; border-radius: 12px; background: #0a0906; }
+
+
+  .camera-card {
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .camera-feed {
+    flex: 1;
+    background-size: cover;
+    background-position: center;
+    min-height: 0;
+    position: relative;
+  }
+
+  .camera-live-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(10,9,7,0.55);
+    backdrop-filter: blur(4px);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--parchment);
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--brass);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .camera-info {
+    padding: 16px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--hairline);
+    flex-shrink: 0;
+  }
+
+  .camera-name {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  .camera-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* ---------- MAIN GRID ---------- */
+  .main {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+    min-height: 0;
+  }
+
+  .left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 0;
+  }
+
+  .right-col {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 20px;
+    min-height: 0;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: 18px;
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin-bottom: 14px;
+  }
+
+  /* ---------- DIAL CLOCK ---------- */
+  .clock-panel {
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    padding: 24px;
+    position: relative;
+  }
+
+  .dial-wrap {
+    position: relative;
+    width: 150px;
+    height: 150px;
+  }
+
+  svg.dial { width: 100%; height: 100%; }
+
+  .dial-ring {
+    fill: none;
+    stroke: var(--hairline);
+    stroke-width: 2;
+  }
+
+  .tick { stroke: var(--muted); stroke-width: 2; }
+  .tick.major { stroke: var(--brass); stroke-width: 3; }
+
+  .hand {
+    stroke-linecap: round;
+    transform-origin: 150px 150px;
+  }
+  .hand.hour { stroke: var(--parchment); stroke-width: 6; }
+  .hand.minute { stroke: var(--parchment); stroke-width: 4; }
+  .hand.second { stroke: var(--brass); stroke-width: 2; }
+
+  .dial-center {
+    fill: var(--brass);
+  }
+
+  .digital-time {
+    position: absolute;
+    bottom: 17px;
+    left: 0; right: 0;
+    text-align: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+  }
+
+  .digital-time .ampm {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-left: 2px;
+  }
+
+  .date-line {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: 16px;
+    color: var(--muted);
+    margin-top: 12px;
+    text-align: center;
+  }
+
+  /* ---------- WEATHER STRIP ---------- */
+  .weather-panel {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+  }
+
+  .weather-temp {
+    font-family: 'Fraunces', serif;
+    font-size: 34px;
+    font-weight: 500;
+  }
+
+  .weather-desc {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .weather-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .sun-times {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* ---------- CALENDAR (4 separate calendars, 2x2) ---------- */
+  .calendar-panel { min-height: 0; }
+
+  .agenda-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+  }
+
+  .agenda-title {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 500;
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: 1fr;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .cal-quad {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    padding: 10px 10px;
+    background: var(--panel-hi);
+  }
+
+  .cal-quad-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+  }
+
+  .cal-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .cal-quad-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cal-quad-list {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cal-event {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    font-size: 12px;
+  }
+
+  .cal-event-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--brass);
+    white-space: nowrap;
+  }
+
+  .cal-event-name {
+    font-weight: 500;
+    line-height: 1.25;
+    font-size: 12px;
+  }
+
+  .cal-quad-empty {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* ---------- BOTTOM ROW: grocery + score + quote ---------- */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 0.8fr;
+    gap: 20px;
+  }
+
+  /* ---------- SCORE PANEL (multi-team) ---------- */
+  .score-panel {
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .sport-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .sport-row {
+    display: grid;
+    grid-template-columns: 78px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 2px;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .sport-row:last-child { border-bottom: none; }
+
+  .sport-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .sport-teams {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .sport-teams .vs-logo {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+  }
+
+  .score-value { min-width: 14px; text-align: center; }
+
+  .score-dash { color: var(--muted); font-weight: 300; }
+
+  .sport-status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--sage);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .sport-status.live { color: var(--brass); }
+
+  .grocery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .grocery-connect {
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--brass);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 14px;
+    cursor: pointer;
+  }
+
+  .grocery-connect:hover, .grocery-connect:active { border-color: var(--brass); }
+  .grocery-connect.connected {
+    color: var(--sage);
+    border-color: var(--sage);
+    cursor: default;
+  }
+
+  .grocery-status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .grocery-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+  }
+
+  .grocery-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 2px solid var(--muted);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+
+  .grocery-item.checked .checkbox {
+    background: var(--sage);
+    border-color: var(--sage);
+  }
+
+  .grocery-item.checked .item-text {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+
+  .checkbox svg { width: 12px; height: 12px; opacity: 0; transition: opacity 0.15s ease; }
+  .grocery-item.checked .checkbox svg { opacity: 1; }
+
+  .quote-panel {
+    justify-content: center;
+    flex: 1;
+  }
+
+  .quote-text {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-style: italic;
+    font-size: 19px;
+    line-height: 1.45;
+    color: var(--parchment);
+  }
+
+  .quote-author {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--brass);
+    margin-top: 14px;
+    letter-spacing: 0.05em;
+  }
+
+  .quote-author::before { content: "— "; }
+
+  /* ---------- IDLE PHOTO SLIDESHOW ---------- */
+  #slideshow-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.2s ease;
+  }
+
+  #slideshow-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1.6s ease;
+    animation: kenburns 14s ease-in-out forwards;
+  }
+
+  .slide.showing { opacity: 1; }
+
+  @keyframes kenburns {
+    0%   { transform: scale(1); }
+    100% { transform: scale(1.08); }
+  }
+
+  #slideshow-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.5) 100%);
+    pointer-events: none;
+  }
+
+  .slideshow-clock {
+    position: absolute;
+    bottom: 40px;
+    left: 48px;
+    z-index: 2;
+    color: var(--parchment);
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+  }
+
+  .slideshow-clock .time {
+    font-size: 56px;
+    line-height: 1;
+  }
+
+  .slideshow-clock .date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(242,237,228,0.7);
+    margin-top: 8px;
+  }
+
+  /* ---------- FAMILY WHITEBOARD ---------- */
+  #whiteboard-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    background: rgba(10,9,7,0.92);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    padding: 40px 48px;
+  }
+
+  #whiteboard-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .wb-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    flex-shrink: 0;
+  }
+
+  .wb-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 28px;
+  }
+
+  .wb-close {
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--parchment);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+  }
+
+  .wb-close:hover, .wb-close:active { border-color: var(--brass); }
+
+  .wb-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    grid-auto-rows: 190px;
+    gap: 18px;
+    overflow-y: auto;
+    align-content: start;
+  }
+
+  .wb-note {
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  }
+
+  .wb-note textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: 'Caveat', 'Fraunces', serif;
+    font-size: 22px;
+    line-height: 1.3;
+    color: #201d1a;
+    width: 100%;
+  }
+
+  .wb-note textarea::placeholder { color: rgba(32,29,26,0.45); }
+
+  .wb-note-delete {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: rgba(32,29,26,0.45);
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .wb-note-delete:hover { color: rgba(32,29,26,0.85); }
+
+  .wb-note-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: rgba(32,29,26,0.5);
+    margin-top: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  .wb-add {
+    border-radius: 14px;
+    border: 2px dashed var(--hairline);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .wb-add:hover { border-color: var(--brass); color: var(--brass); }
+
+  /* ---------- NIGHTLY SLEEP MODE (11 PM – 6 AM) ---------- */
+  #sleep-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #sleep-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sleep-clock {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: 130px;
+    letter-spacing: 0.02em;
+    color: rgba(201,162,39,0.22);
+    text-align: center;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 10px; }
+
+  /* ---------- SETTINGS PANEL ---------- */
+  #settings-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 950;
+    background: rgba(10,9,7,0.75);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+
+  #settings-overlay.active { opacity: 1; pointer-events: auto; }
+
+  .settings-card {
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: 18px;
+    width: min(640px, 100%);
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px 26px;
+    border-bottom: 1px solid var(--hairline);
+    flex-shrink: 0;
+  }
+
+  .settings-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 22px;
+  }
+
+  .settings-body {
+    overflow-y: auto;
+    padding: 22px 26px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .settings-section { margin-bottom: 28px; }
+  .settings-section:last-child { margin-bottom: 0; }
+
+  .settings-section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--hairline);
+    padding-bottom: 8px;
+  }
+
+  .settings-field { margin-bottom: 14px; }
+  .settings-field:last-child { margin-bottom: 0; }
+
+  .settings-label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .settings-input, .settings-select {
+    width: 100%;
+    background: var(--iron);
+    border: 1px solid var(--hairline);
+    color: var(--parchment);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    outline: none;
+  }
+
+  .settings-input:focus, .settings-select:focus { border-color: var(--brass); }
+
+  .settings-inline { display: flex; gap: 8px; }
+  .settings-inline .settings-input { flex: 1; }
+
+  .settings-help {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 5px;
+    line-height: 1.5;
+  }
+
+  .settings-checkbox-field { display: flex; align-items: center; }
+  .settings-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--parchment);
+    cursor: pointer;
+  }
+  .settings-checkbox-label input { width: 16px; height: 16px; }
+
+  .settings-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .settings-row.two-field {
+    grid-template-columns: 1fr 1fr auto;
+  }
+
+  .settings-row-remove {
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--muted);
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .settings-row-remove:hover { border-color: var(--brass); color: var(--brass); }
+
+  .settings-add-btn {
+    margin-top: 4px;
+    background: transparent;
+    border: 1px dashed var(--hairline);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+  }
+  .settings-add-btn:hover { border-color: var(--brass); color: var(--brass); }
+
+  .settings-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 26px;
+    border-top: 1px solid var(--hairline);
+    flex-shrink: 0;
+  }
+
+  .settings-btn-primary, .settings-btn-secondary {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 11px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    border: 1px solid var(--hairline);
+  }
+
+  .settings-btn-primary {
+    background: var(--brass);
+    color: var(--iron);
+    border-color: var(--brass);
+    font-weight: 600;
+  }
+
+  .settings-btn-secondary {
+    background: transparent;
+    color: var(--parchment);
+  }
+  .settings-btn-secondary:hover { border-color: var(--brass); }
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
+</head>
+<body>
+
+<div class="frame">
+  <div class="topbar">
+    <div class="house-mark">The <span id="house-name">Family</span> House</div>
+    <div class="topbar-right">
+      <div class="topbar-buttons">
+        <button class="view-tab active" id="tab-home">Home</button>
+        <button class="view-tab" id="tab-cameras">Cameras</button>
+        <button class="view-tab" id="tab-dinner">Dinner</button>
+        <button class="notes-btn" id="notes-toggle">
+          ✎ Whiteboard <span class="notes-count zero" id="notes-count">0</span>
+        </button>
+        <button class="notes-btn" id="settings-toggle">⚙ Settings</button>
+      </div>
+      <div class="today-label" id="today-label">—</div>
+    </div>
+  </div>
+
+  <div class="main" id="view-home">
+    <div class="left-col">
+      <div class="panel weather-panel">
+        <div>
+          <div class="weather-temp" id="weather-temp">68°</div>
+          <div class="weather-desc" id="weather-desc">Partly Cloudy</div>
+        </div>
+        <div class="weather-right">
+          <div class="eyebrow" style="margin:0;" id="city-label">City, ST</div>
+          <div class="sun-times" id="sun-times">☀ --:-- · --:--</div>
+        </div>
+      </div>
+
+      <div class="panel clock-panel">
+        <div class="dial-wrap">
+          <svg class="dial" viewBox="0 0 300 300">
+            <circle class="dial-ring" cx="150" cy="150" r="140" />
+            <g id="ticks"></g>
+            <line id="hourHand" class="hand hour" x1="150" y1="150" x2="150" y2="90"/>
+            <line id="minHand" class="hand minute" x1="150" y1="150" x2="150" y2="60"/>
+            <line id="secHand" class="hand second" x1="150" y1="150" x2="150" y2="55"/>
+            <circle class="dial-center" cx="150" cy="150" r="6"/>
+          </svg>
+          <div class="digital-time" id="digital-time">--:-- <span class="ampm">AM</span></div>
+        </div>
+        <div class="date-line" id="date-line">—</div>
+      </div>
+
+      <div class="panel quote-panel">
+        <div class="eyebrow">Word Of The Day</div>
+        <div class="quote-text" id="quote-text">Loading…</div>
+        <div class="quote-author" id="quote-author"></div>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="panel calendar-panel">
+        <div class="agenda-header">
+          <div class="agenda-title">Today</div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="eyebrow" style="margin:0;" id="calendar-status-label">6 Family Members</div>
+            <button class="grocery-connect" id="calendar-connect">Connect</button>
+          </div>
+        </div>
+        <div class="calendar-grid" id="calendar-grid">
+          <!-- 4 cal-quad blocks populated by JS placeholder data -->
+        </div>
+      </div>
+
+      <div class="bottom-row">
+        <div class="panel">
+          <div class="grocery-header">
+            <div class="eyebrow" style="margin:0;" id="grocery-list-title">Groceries</div>
+            <button class="grocery-connect" id="grocery-connect">Connect</button>
+          </div>
+          <div class="grocery-status" id="grocery-status"></div>
+          <ul class="grocery-list" id="grocery-list"></ul>
+        </div>
+
+        <div class="panel">
+          <div class="grocery-header">
+            <div class="eyebrow" style="margin:0;" id="home-projects-title">To Do</div>
+          </div>
+          <div class="grocery-status" id="home-projects-status"></div>
+          <ul class="grocery-list" id="home-projects-list"></ul>
+        </div>
+
+        <div class="panel score-panel">
+          <div class="eyebrow" style="text-align:center;" id="sports-panel-title">My Teams</div>
+          <div class="sport-rows" id="sport-rows"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="camera-grid" id="view-cameras">
+    <div class="panel camera-card">
+      <div class="camera-feed" id="cam-front-feed">
+        <div class="camera-live-badge"><span class="live-dot"></span>Demo</div>
+      </div>
+      <div class="camera-info">
+        <div class="camera-name">Front Doorbell</div>
+        <div class="camera-meta" id="cam-front-meta">Placeholder image — see README</div>
+      </div>
+    </div>
+
+    <div class="panel camera-card">
+      <div class="camera-feed" id="cam-flood-feed">
+        <div class="camera-live-badge"><span class="live-dot"></span>Demo</div>
+      </div>
+      <div class="camera-info">
+        <div class="camera-name">Floodlight</div>
+        <div class="camera-meta" id="cam-flood-meta">Placeholder image — see README</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="iframe-view" id="view-dinner">
+    <iframe title="Dinner Menu"></iframe>
+  </div>
+
+</div>
+
+<div id="slideshow-overlay">
+  <div class="slideshow-clock">
+    <div class="time" id="slideshow-time">--:--</div>
+    <div class="date" id="slideshow-date">—</div>
+  </div>
+</div>
+
+<div id="sleep-overlay">
+  <div class="sleep-clock" id="sleep-clock">--:--</div>
+</div>
+
+<div id="whiteboard-overlay">
+  <div class="wb-header">
+    <div class="wb-title">Family Whiteboard</div>
+    <button class="wb-close" id="wb-close">✕</button>
+  </div>
+  <div class="wb-grid" id="wb-grid">
+    <!-- notes + add-button populated by JS -->
+  </div>
+</div>
+
+<div id="settings-overlay">
+  <div class="settings-card">
+    <div class="settings-header">
+      <div class="settings-title">Kitchen Hub Settings</div>
+      <button class="wb-close" id="settings-close">✕</button>
+    </div>
+    <div class="settings-body" id="settings-body">
+
+      <div class="settings-section">
+        <div class="settings-section-title">Household</div>
+        <div class="settings-field">
+          <label class="settings-label">Household name</label>
+          <input type="text" class="settings-input" id="set-household-name" placeholder="Family">
+          <div class="settings-help">Shown top-left as "The ___ House."</div>
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">City</label>
+          <div class="settings-inline">
+            <input type="text" class="settings-input" id="set-city-search" placeholder="e.g. Cleveland, OH">
+            <button class="settings-btn-secondary" id="set-city-find">Find</button>
+          </div>
+          <div class="settings-help" id="set-city-result">Type your city and click Find — this looks up your coordinates automatically for weather and sunrise/sunset.</div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Family Calendar Columns</div>
+        <div class="settings-help" style="margin-bottom:10px;">One column per person. "Match" is checked against your real Google Calendar names/emails once you connect it — separate multiple with commas.</div>
+        <div id="set-calendar-rows"></div>
+        <button class="settings-add-btn" id="set-calendar-add">+ Add Family Member</button>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Sports Scoreboard</div>
+        <div class="settings-field">
+          <label class="settings-label">Panel title</label>
+          <input type="text" class="settings-input" id="set-sports-title" placeholder="My Teams">
+        </div>
+        <div class="settings-help" style="margin-bottom:10px;">Optional — leave with no teams added to hide this panel.</div>
+        <div id="set-sports-rows"></div>
+        <button class="settings-add-btn" id="set-sports-add">+ Add Team</button>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Optional Tabs</div>
+        <div class="settings-field">
+          <label class="settings-label">Dinner planner URL</label>
+          <input type="text" class="settings-input" id="set-dinner-url" placeholder="Leave blank to hide the Dinner tab">
+          <div class="settings-help">Your own embedded meal-planner web app (e.g. a Google Apps Script). See README.md.</div>
+        </div>
+        <div class="settings-field settings-checkbox-field">
+          <label class="settings-checkbox-label">
+            <input type="checkbox" id="set-show-cameras">
+            Show Cameras tab (demo placeholder images only — no real camera is wired up)
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Microsoft (Grocery / To-Do / OneDrive photos)</div>
+        <div class="settings-field">
+          <label class="settings-label">OneDrive photo folder name</label>
+          <input type="text" class="settings-input" id="set-onedrive-folder" placeholder="Kitchen Hub Photos">
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">Microsoft application (client) ID</label>
+          <input type="text" class="settings-input" id="set-ms-client-id" placeholder="Paste from your Entra app registration">
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">Microsoft tenant ID</label>
+          <input type="text" class="settings-input" id="set-ms-tenant-id" placeholder="common">
+          <div class="settings-help">Leave as "common" unless your app registration is restricted to one organization. See README.md for how to create this.</div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Google (Calendar)</div>
+        <div class="settings-field">
+          <label class="settings-label">Google OAuth client ID</label>
+          <input type="text" class="settings-input" id="set-google-client-id" placeholder="Paste from Google Cloud Console">
+          <div class="settings-help">See README.md for how to create this — it's free and takes about five minutes.</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="settings-actions">
+      <button class="settings-btn-secondary" id="set-reset">Reset to Defaults</button>
+      <button class="settings-btn-primary" id="set-save">Save &amp; Reload</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // HOUSEHOLD CONFIG
+  // ============================================================
+  // The easiest way to set this dashboard up is the on-screen Settings
+  // panel — click the gear icon (⚙ Settings) in the top-right corner.
+  // Everything you fill in there is saved in this browser (localStorage)
+  // and overrides the defaults below, so you never have to edit this
+  // file at all for day-to-day setup.
+  //
+  // DEFAULT_CONFIG below is only the starting point shown the very
+  // first time, before you've saved anything in Settings. Editing it
+  // directly still works too, if you'd rather do it that way.
+  const DEFAULT_CONFIG = {
+    householdName: "Family",
+    city: "City, ST",
+    latitude: 41.4993,
+    longitude: -81.6944,
+    calendarGroups: [
+      { title: "Parent 1", color: "var(--sage)",  matchNames: ["your.email@gmail.com"] },
+      { title: "Parent 2", color: "var(--brass)", matchNames: ["partner.email@gmail.com"] },
+      { title: "Kid 1",    color: "#5B7A96",       matchNames: ["Kid 1 Name"] },
+      { title: "Kid 2",    color: "#8B6F8C",       matchNames: ["Kid 2 Name"] },
+    ],
+    sportsTeams: [],
+    sportsPanelTitle: "My Teams",
+    dinnerPlannerUrl: "",
+    showCamerasTab: true,
+    oneDrivePhotoFolder: "Kitchen Hub Photos",
+    googleClientId: "",
+    microsoftClientId: "",
+    microsoftTenantId: "common",
+  };
+
+  // Preset color choices offered in the Settings panel for calendar columns.
+  const CAL_COLOR_OPTIONS = [
+    { value: "var(--sage)",  label: "Sage green" },
+    { value: "var(--brass)", label: "Brass gold" },
+    { value: "#5B7A96",      label: "Slate blue" },
+    { value: "#8B6F8C",      label: "Mauve" },
+    { value: "#A8574A",      label: "Rust" },
+    { value: "#4A7A7A",      label: "Teal" },
+  ];
+
+  // Bundled team/abbreviation lists (pulled from ESPN's own team API) so
+  // the Settings panel can offer real league + team dropdowns instead of
+  // making anyone type or look up abbreviation codes.
+  const TEAM_DATABASE = {
+    mlb: {
+      label: "MLB",
+      sportPath: "baseball/mlb",
+      teams: [
+        { abbr: "ARI", label: "Arizona Diamondbacks" },
+        { abbr: "ATH", label: "Athletics" },
+        { abbr: "ATL", label: "Atlanta Braves" },
+        { abbr: "BAL", label: "Baltimore Orioles" },
+        { abbr: "BOS", label: "Boston Red Sox" },
+        { abbr: "CHC", label: "Chicago Cubs" },
+        { abbr: "CHW", label: "Chicago White Sox" },
+        { abbr: "CIN", label: "Cincinnati Reds" },
+        { abbr: "CLE", label: "Cleveland Guardians" },
+        { abbr: "COL", label: "Colorado Rockies" },
+        { abbr: "DET", label: "Detroit Tigers" },
+        { abbr: "HOU", label: "Houston Astros" },
+        { abbr: "KC", label: "Kansas City Royals" },
+        { abbr: "LAA", label: "Los Angeles Angels" },
+        { abbr: "LAD", label: "Los Angeles Dodgers" },
+        { abbr: "MIA", label: "Miami Marlins" },
+        { abbr: "MIL", label: "Milwaukee Brewers" },
+        { abbr: "MIN", label: "Minnesota Twins" },
+        { abbr: "NYM", label: "New York Mets" },
+        { abbr: "NYY", label: "New York Yankees" },
+        { abbr: "PHI", label: "Philadelphia Phillies" },
+        { abbr: "PIT", label: "Pittsburgh Pirates" },
+        { abbr: "SD", label: "San Diego Padres" },
+        { abbr: "SF", label: "San Francisco Giants" },
+        { abbr: "SEA", label: "Seattle Mariners" },
+        { abbr: "STL", label: "St. Louis Cardinals" },
+        { abbr: "TB", label: "Tampa Bay Rays" },
+        { abbr: "TEX", label: "Texas Rangers" },
+        { abbr: "TOR", label: "Toronto Blue Jays" },
+        { abbr: "WSH", label: "Washington Nationals" },
+      ],
+    },
+    nfl: {
+      label: "NFL",
+      sportPath: "football/nfl",
+      teams: [
+        { abbr: "ARI", label: "Arizona Cardinals" },
+        { abbr: "ATL", label: "Atlanta Falcons" },
+        { abbr: "BAL", label: "Baltimore Ravens" },
+        { abbr: "BUF", label: "Buffalo Bills" },
+        { abbr: "CAR", label: "Carolina Panthers" },
+        { abbr: "CHI", label: "Chicago Bears" },
+        { abbr: "CIN", label: "Cincinnati Bengals" },
+        { abbr: "CLE", label: "Cleveland Browns" },
+        { abbr: "DAL", label: "Dallas Cowboys" },
+        { abbr: "DEN", label: "Denver Broncos" },
+        { abbr: "DET", label: "Detroit Lions" },
+        { abbr: "GB", label: "Green Bay Packers" },
+        { abbr: "HOU", label: "Houston Texans" },
+        { abbr: "IND", label: "Indianapolis Colts" },
+        { abbr: "JAX", label: "Jacksonville Jaguars" },
+        { abbr: "KC", label: "Kansas City Chiefs" },
+        { abbr: "LV", label: "Las Vegas Raiders" },
+        { abbr: "LAC", label: "Los Angeles Chargers" },
+        { abbr: "LAR", label: "Los Angeles Rams" },
+        { abbr: "MIA", label: "Miami Dolphins" },
+        { abbr: "MIN", label: "Minnesota Vikings" },
+        { abbr: "NE", label: "New England Patriots" },
+        { abbr: "NO", label: "New Orleans Saints" },
+        { abbr: "NYG", label: "New York Giants" },
+        { abbr: "NYJ", label: "New York Jets" },
+        { abbr: "PHI", label: "Philadelphia Eagles" },
+        { abbr: "PIT", label: "Pittsburgh Steelers" },
+        { abbr: "SF", label: "San Francisco 49ers" },
+        { abbr: "SEA", label: "Seattle Seahawks" },
+        { abbr: "TB", label: "Tampa Bay Buccaneers" },
+        { abbr: "TEN", label: "Tennessee Titans" },
+        { abbr: "WSH", label: "Washington Commanders" },
+      ],
+    },
+    nba: {
+      label: "NBA",
+      sportPath: "basketball/nba",
+      teams: [
+        { abbr: "ATL", label: "Atlanta Hawks" },
+        { abbr: "BOS", label: "Boston Celtics" },
+        { abbr: "BKN", label: "Brooklyn Nets" },
+        { abbr: "CHA", label: "Charlotte Hornets" },
+        { abbr: "CHI", label: "Chicago Bulls" },
+        { abbr: "CLE", label: "Cleveland Cavaliers" },
+        { abbr: "DAL", label: "Dallas Mavericks" },
+        { abbr: "DEN", label: "Denver Nuggets" },
+        { abbr: "DET", label: "Detroit Pistons" },
+        { abbr: "GS", label: "Golden State Warriors" },
+        { abbr: "HOU", label: "Houston Rockets" },
+        { abbr: "IND", label: "Indiana Pacers" },
+        { abbr: "LAC", label: "LA Clippers" },
+        { abbr: "LAL", label: "Los Angeles Lakers" },
+        { abbr: "MEM", label: "Memphis Grizzlies" },
+        { abbr: "MIA", label: "Miami Heat" },
+        { abbr: "MIL", label: "Milwaukee Bucks" },
+        { abbr: "MIN", label: "Minnesota Timberwolves" },
+        { abbr: "NO", label: "New Orleans Pelicans" },
+        { abbr: "NY", label: "New York Knicks" },
+        { abbr: "OKC", label: "Oklahoma City Thunder" },
+        { abbr: "ORL", label: "Orlando Magic" },
+        { abbr: "PHI", label: "Philadelphia 76ers" },
+        { abbr: "PHX", label: "Phoenix Suns" },
+        { abbr: "POR", label: "Portland Trail Blazers" },
+        { abbr: "SAC", label: "Sacramento Kings" },
+        { abbr: "SA", label: "San Antonio Spurs" },
+        { abbr: "TOR", label: "Toronto Raptors" },
+        { abbr: "UTAH", label: "Utah Jazz" },
+        { abbr: "WSH", label: "Washington Wizards" },
+      ],
+    },
+    nhl: {
+      label: "NHL",
+      sportPath: "hockey/nhl",
+      teams: [
+        { abbr: "ANA", label: "Anaheim Ducks" },
+        { abbr: "BOS", label: "Boston Bruins" },
+        { abbr: "BUF", label: "Buffalo Sabres" },
+        { abbr: "CGY", label: "Calgary Flames" },
+        { abbr: "CAR", label: "Carolina Hurricanes" },
+        { abbr: "CHI", label: "Chicago Blackhawks" },
+        { abbr: "COL", label: "Colorado Avalanche" },
+        { abbr: "CBJ", label: "Columbus Blue Jackets" },
+        { abbr: "DAL", label: "Dallas Stars" },
+        { abbr: "DET", label: "Detroit Red Wings" },
+        { abbr: "EDM", label: "Edmonton Oilers" },
+        { abbr: "FLA", label: "Florida Panthers" },
+        { abbr: "LA", label: "Los Angeles Kings" },
+        { abbr: "MIN", label: "Minnesota Wild" },
+        { abbr: "MTL", label: "Montreal Canadiens" },
+        { abbr: "NSH", label: "Nashville Predators" },
+        { abbr: "NJ", label: "New Jersey Devils" },
+        { abbr: "NYI", label: "New York Islanders" },
+        { abbr: "NYR", label: "New York Rangers" },
+        { abbr: "OTT", label: "Ottawa Senators" },
+        { abbr: "PHI", label: "Philadelphia Flyers" },
+        { abbr: "PIT", label: "Pittsburgh Penguins" },
+        { abbr: "SJ", label: "San Jose Sharks" },
+        { abbr: "SEA", label: "Seattle Kraken" },
+        { abbr: "STL", label: "St. Louis Blues" },
+        { abbr: "TB", label: "Tampa Bay Lightning" },
+        { abbr: "TOR", label: "Toronto Maple Leafs" },
+        { abbr: "UTAH", label: "Utah Mammoth" },
+        { abbr: "VAN", label: "Vancouver Canucks" },
+        { abbr: "VGK", label: "Vegas Golden Knights" },
+        { abbr: "WSH", label: "Washington Capitals" },
+        { abbr: "WPG", label: "Winnipeg Jets" },
+      ],
+    },
+  };
+
+  // ---------- SETTINGS STORAGE ----------
+  const SETTINGS_KEY = 'kitchen-hub-settings';
+
+  function loadConfig() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+      if (saved) return Object.assign({}, DEFAULT_CONFIG, saved);
+    } catch (e) { /* fall through to defaults */ }
+    return Object.assign({}, DEFAULT_CONFIG);
+  }
+
+  function saveConfig(settings) {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  }
+
+  let CONFIG = loadConfig();
+
+  // Apply the simple text/visibility bits of CONFIG right away.
+  document.getElementById('house-name').textContent = CONFIG.householdName;
+  document.getElementById('city-label').textContent = CONFIG.city;
+  if (CONFIG.sportsPanelTitle) {
+    document.getElementById('sports-panel-title').textContent = CONFIG.sportsPanelTitle;
+  }
+  if (!CONFIG.dinnerPlannerUrl) {
+    document.getElementById('tab-dinner').style.display = 'none';
+  } else {
+    document.querySelector('#view-dinner iframe').src = CONFIG.dinnerPlannerUrl;
+  }
+  if (CONFIG.showCamerasTab === false) document.getElementById('tab-cameras').style.display = 'none';
+
+  // ---------- CLOCK ----------
+  const ticksGroup = document.getElementById('ticks');
+  for (let i = 0; i < 60; i++) {
+    const angle = (i * 6) * Math.PI / 180;
+    const isMajor = i % 5 === 0;
+    const outerR = 140, innerR = isMajor ? 122 : 130;
+    const x1 = 150 + outerR * Math.sin(angle);
+    const y1 = 150 - outerR * Math.cos(angle);
+    const x2 = 150 + innerR * Math.sin(angle);
+    const y2 = 150 - innerR * Math.cos(angle);
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", x1); line.setAttribute("y1", y1);
+    line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+    line.setAttribute("class", isMajor ? "tick major" : "tick");
+    ticksGroup.appendChild(line);
+  }
+
+  const hourHand = document.getElementById('hourHand');
+  const minHand = document.getElementById('minHand');
+  const secHand = document.getElementById('secHand');
+  const digitalTime = document.getElementById('digital-time');
+  const dateLine = document.getElementById('date-line');
+  const todayLabel = document.getElementById('today-label');
+
+  function updateClock() {
+    const now = new Date();
+    const h = now.getHours() % 12;
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+
+    const hourDeg = (h * 30) + (m * 0.5);
+    const minDeg = m * 6 + s * 0.1;
+    const secDeg = s * 6;
+
+    hourHand.style.transform = `rotate(${hourDeg}deg)`;
+    minHand.style.transform = `rotate(${minDeg}deg)`;
+    secHand.style.transform = `rotate(${secDeg}deg)`;
+
+    let displayH = now.getHours() % 12; if (displayH === 0) displayH = 12;
+    const displayM = m.toString().padStart(2, '0');
+    const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+    digitalTime.innerHTML = `${displayH}:${displayM} <span class="ampm">${ampm}</span>`;
+
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    dateLine.textContent = dateStr;
+    todayLabel.textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // ---------- CALENDAR RENDERING (reusable — used by both placeholder and live data) ----------
+  const CAL_COLORS = ["var(--sage)", "var(--brass)", "#5B7A96", "#8B6F8C", "#A8574A", "#4A7A7A"];
+  const calendarGrid = document.getElementById('calendar-grid');
+
+  function renderCalendars(cals) {
+    calendarGrid.innerHTML = '';
+    cals.forEach((cal, i) => {
+      const quad = document.createElement('div');
+      quad.className = 'cal-quad';
+
+      const header = document.createElement('div');
+      header.className = 'cal-quad-header';
+      header.innerHTML = `<span class="cal-dot" style="background:${cal.color || CAL_COLORS[i % 6]}"></span>
+                           <span class="cal-quad-name">${cal.name}</span>`;
+      quad.appendChild(header);
+
+      const list = document.createElement('div');
+      list.className = 'cal-quad-list';
+
+      if (!cal.events || cal.events.length === 0) {
+        list.innerHTML = `<div class="cal-quad-empty">Nothing today</div>`;
+      } else {
+        cal.events.forEach(ev => {
+          const item = document.createElement('div');
+          item.className = 'cal-event';
+          item.innerHTML = `
+            <div class="cal-event-time">${ev.time}</div>
+            <div class="cal-event-name">${ev.name}</div>`;
+          list.appendChild(item);
+        });
+      }
+
+      quad.appendChild(list);
+      calendarGrid.appendChild(quad);
+    });
+  }
+
+  // Placeholder data — shown until you connect your real Google Calendar.
+  // Pulls names straight from CONFIG.calendarGroups so the demo view
+  // already matches what you typed in up top.
+  const placeholderCalendarData = CONFIG.calendarGroups.map((g, i) => ({
+    name: g.title, color: g.color || CAL_COLORS[i % 6], events: [],
+  }));
+  renderCalendars(placeholderCalendarData);
+
+  // ---------- LIST RENDERING (reusable for grocery + home projects) ----------
+  const groceryList = document.getElementById('grocery-list');
+  const homeProjectsList = document.getElementById('home-projects-list');
+
+  function renderListItems(listEl, items) {
+    // items: [{ id, text, checked }]
+    listEl.innerHTML = '';
+    items.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'grocery-item' + (item.checked ? ' checked' : '');
+      li.innerHTML = `
+        <div class="checkbox">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1C1A17" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <div class="item-text">${item.text}</div>`;
+      li.addEventListener('click', () => {
+        li.classList.toggle('checked');
+        // Note: with read-only Tasks.Read scope, this only toggles the
+        // on-screen look — it does not write back to Microsoft To Do.
+        // Upgrading to Tasks.ReadWrite scope would let this sync both ways.
+      });
+      listEl.appendChild(li);
+    });
+  }
+
+  const placeholderGroceryItems = ["Milk", "Eggs", "Coffee", "Chicken thighs", "Paper towels", "Bananas"]
+    .map((text, i) => ({ id: 'placeholder-' + i, text, checked: false }));
+  renderListItems(groceryList, placeholderGroceryItems);
+
+  const placeholderHomeProjects = ["Fix garage light", "Clean gutters", "Paint fence"]
+    .map((text, i) => ({ id: 'placeholder-hp-' + i, text, checked: false }));
+  renderListItems(homeProjectsList, placeholderHomeProjects);
+
+  // ---------- QUOTE OF THE DAY ----------
+  const fallbackQuotes = [
+    { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+    { text: "Do not wait to strike till the iron is hot; but make it hot by striking.", author: "William B. Sprague" },
+    { text: "What we think, we become.", author: "Buddha" },
+  ];
+
+  async function loadQuote() {
+    try {
+      const res = await fetch('https://api.quotable.io/random?tags=inspirational');
+      if (!res.ok) throw new Error('bad response');
+      const data = await res.json();
+      document.getElementById('quote-text').textContent = `"${data.content}"`;
+      document.getElementById('quote-author').textContent = data.author;
+    } catch (e) {
+      const q = fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
+      document.getElementById('quote-text').textContent = `"${q.text}"`;
+      document.getElementById('quote-author').textContent = q.author;
+    }
+  }
+  loadQuote();
+
+  // ---------- PLACEHOLDER WEATHER ----------
+  // Swap this block for a live weather API call later (open-meteo.com requires no key)
+  async function loadWeather() {
+    try {
+      const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${CONFIG.latitude}&longitude=${CONFIG.longitude}&current=temperature_2m,weather_code&temperature_unit=fahrenheit`);
+      const data = await res.json();
+      const temp = Math.round(data.current.temperature_2m);
+      document.getElementById('weather-temp').textContent = `${temp}°`;
+      const codeMap = {0:"Clear Sky",1:"Mostly Clear",2:"Partly Cloudy",3:"Overcast",45:"Fog",48:"Fog",51:"Light Drizzle",61:"Rain",63:"Rain",65:"Heavy Rain",71:"Snow",73:"Snow",75:"Heavy Snow",80:"Showers",95:"Thunderstorm"};
+      document.getElementById('weather-desc').textContent = codeMap[data.current.weather_code] || "—";
+    } catch (e) { /* keep placeholder */ }
+  }
+  loadWeather();
+
+  // ---------- SUNRISE / SUNSET ----------
+  // Free, no-key API — returns UTC times, which Date() converts to local automatically.
+  async function loadSunTimes() {
+    const sunEl = document.getElementById('sun-times');
+    try {
+      const res = await fetch(`https://api.sunrise-sunset.org/json?lat=${CONFIG.latitude}&lng=${CONFIG.longitude}&formatted=0`);
+      const data = await res.json();
+      const fmt = iso => new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      sunEl.textContent = `☀ ${fmt(data.results.sunrise)} · ${fmt(data.results.sunset)}`;
+    } catch (e) {
+      sunEl.textContent = '';
+    }
+  }
+  loadSunTimes();
+
+  // ---------- MY TEAMS (configurable via CONFIG.sportsTeams) ----------
+  const sportRowsEl = document.getElementById('sport-rows');
+
+  function buildSportRows(teams) {
+    sportRowsEl.innerHTML = '';
+    if (!teams || teams.length === 0) {
+      sportRowsEl.innerHTML = '<div class="cal-quad-empty">No teams configured — add some in CONFIG.sportsTeams</div>';
+      return;
+    }
+    teams.forEach((team, i) => {
+      const row = document.createElement('div');
+      row.className = 'sport-row';
+      row.id = 'sport-row-' + i;
+      row.innerHTML = `
+        <div class="sport-label">${team.label}</div>
+        <div class="sport-teams">Loading…</div>
+        <div class="sport-status"></div>`;
+      sportRowsEl.appendChild(row);
+    });
+  }
+  buildSportRows(CONFIG.sportsTeams);
+
+  function logoImg(team, cls) {
+    const img = document.createElement('img');
+    img.className = cls || 'team-logo';
+    img.src = team.team.logo;
+    img.alt = team.team.abbreviation;
+    return img;
+  }
+
+  async function loadTeamRow(rowId, sportPath, abbr) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    const teamsEl = row.querySelector('.sport-teams');
+    const statusEl = row.querySelector('.sport-status');
+
+    try {
+      const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${sportPath}/scoreboard`);
+      const data = await res.json();
+      const event = (data.events || []).find(ev =>
+        ev.competitions[0].competitors.some(c => c.team.abbreviation === abbr)
+      );
+
+      teamsEl.innerHTML = '';
+
+      if (!event) {
+        teamsEl.textContent = 'No game today';
+        statusEl.textContent = '';
+        return;
+      }
+
+      const comp = event.competitions[0];
+      const state = comp.status.type.state; // 'pre' | 'in' | 'post'
+      const mine = comp.competitors.find(c => c.team.abbreviation === abbr);
+      const opp = comp.competitors.find(c => c.team.abbreviation !== abbr);
+      const mineHome = mine.homeAway === 'home';
+      const away = mineHome ? opp : mine;
+      const home = mineHome ? mine : opp;
+
+      if (state === 'pre') {
+        const gameDateObj = new Date(event.date);
+        const gameDate = gameDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const gameTime = gameDateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        teamsEl.appendChild(logoImg(away, 'vs-logo'));
+        const at = document.createElement('span');
+        at.textContent = '@';
+        at.style.color = 'var(--muted)';
+        teamsEl.appendChild(at);
+        teamsEl.appendChild(logoImg(home, 'vs-logo'));
+        statusEl.textContent = `${gameDate}, ${gameTime}`;
+        statusEl.classList.remove('live');
+      } else {
+        teamsEl.appendChild(logoImg(away, 'vs-logo'));
+        const awayScore = document.createElement('span');
+        awayScore.className = 'score-value';
+        awayScore.textContent = away.score;
+        teamsEl.appendChild(awayScore);
+        const dash = document.createElement('span');
+        dash.className = 'score-dash';
+        dash.textContent = '–';
+        teamsEl.appendChild(dash);
+        const homeScore = document.createElement('span');
+        homeScore.className = 'score-value';
+        homeScore.textContent = home.score;
+        teamsEl.appendChild(homeScore);
+        teamsEl.appendChild(logoImg(home, 'vs-logo'));
+
+        if (state === 'in') {
+          statusEl.textContent = comp.status.type.shortDetail || 'Live';
+          statusEl.classList.add('live');
+        } else {
+          const won = parseInt(mine.score) > parseInt(opp.score);
+          statusEl.textContent = won ? 'Final — W' : 'Final — L';
+          statusEl.classList.remove('live');
+        }
+      }
+    } catch (e) {
+      teamsEl.textContent = '—';
+      statusEl.textContent = '';
+    }
+  }
+
+  function loadAllTeams() {
+    CONFIG.sportsTeams.forEach((t, i) => loadTeamRow('sport-row-' + i, t.sportPath, t.abbr));
+  }
+  loadAllTeams();
+  setInterval(loadAllTeams, 60000); // refresh every minute for live updates
+
+  // ---------- IDLE PHOTO SLIDESHOW ----------
+  // Placeholder photos shown until you connect OneDrive below.
+  let slideshowPhotos = [
+    'photos/photo1.jpg',
+    'photos/photo2.jpg',
+    'photos/photo3.jpg',
+    'photos/photo4.jpg',
+    'photos/photo5.jpg',
+  ];
+
+  const IDLE_THRESHOLD_MS = 45000;   // idle time before slideshow starts
+  const SLIDE_DURATION_MS = 9000;    // time each photo stays on screen
+
+  const overlay = document.getElementById('slideshow-overlay');
+  let idleTimer = null;
+  let slideInterval = null;
+  let slideIndex = 0;
+  let slideEls = [];
+
+  function shuffleArray(arr) {
+    // Fisher-Yates shuffle — returns a new shuffled copy, doesn't mutate the original
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildSlides(photos) {
+    // clear any previously built slides (used when swapping in real OneDrive photos)
+    slideEls.forEach(el => el.remove());
+    slideEls = [];
+    shuffleArray(photos).forEach((url) => {
+      const div = document.createElement('div');
+      div.className = 'slide';
+      div.style.backgroundImage = `url('${url}')`;
+      overlay.insertBefore(div, overlay.firstChild);
+      slideEls.push(div);
+    });
+  }
+  buildSlides(slideshowPhotos);
+
+
+  function showSlide(i) {
+    slideEls.forEach(el => el.classList.remove('showing'));
+    // restart Ken Burns animation cleanly
+    const el = slideEls[i];
+    el.style.animation = 'none';
+    void el.offsetWidth; // force reflow
+    el.style.animation = '';
+    el.classList.add('showing');
+  }
+
+  function startSlideshow() {
+    overlay.classList.add('active');
+    slideIndex = 0;
+    showSlide(slideIndex);
+    slideInterval = setInterval(() => {
+      slideIndex = (slideIndex + 1) % slideEls.length;
+      showSlide(slideIndex);
+    }, SLIDE_DURATION_MS);
+  }
+
+  function stopSlideshow() {
+    overlay.classList.remove('active');
+    clearInterval(slideInterval);
+    slideEls.forEach(el => el.classList.remove('showing'));
+  }
+
+  function resetIdleTimer() {
+    stopSlideshow();
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(startSlideshow, IDLE_THRESHOLD_MS);
+  }
+
+  ['mousemove', 'mousedown', 'touchstart', 'keydown', 'wheel'].forEach(evt => {
+    document.addEventListener(evt, resetIdleTimer, { passive: true });
+  });
+  overlay.addEventListener('click', resetIdleTimer);
+
+  resetIdleTimer(); // arm the timer on load
+
+  // small clock inside the slideshow overlay
+  function updateSlideshowClock() {
+    const now = new Date();
+    let h = now.getHours() % 12; if (h === 0) h = 12;
+    const m = now.getMinutes().toString().padStart(2, '0');
+    const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+    document.getElementById('slideshow-time').textContent = `${h}:${m} ${ampm}`;
+    document.getElementById('slideshow-date').textContent =
+      now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+  updateSlideshowClock();
+  setInterval(updateSlideshowClock, 1000);
+
+  // ---------- NIGHTLY SLEEP MODE (11 PM – 6 AM) ----------
+  const SLEEP_START_MIN = 23 * 60;  // 11:00 PM
+  const SLEEP_END_MIN = 6 * 60;     // 6:00 AM
+  const WAKE_GRACE_MS = 5 * 60 * 1000; // tapping at night keeps it awake 5 min
+
+  const sleepOverlay = document.getElementById('sleep-overlay');
+  let manualWakeUntil = 0;
+
+  function inSleepWindow(now) {
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    // window wraps past midnight, so it's "before end" OR "after start"
+    return minutes >= SLEEP_START_MIN || minutes < SLEEP_END_MIN;
+  }
+
+  function checkSleepMode() {
+    const now = new Date();
+    const shouldSleep = inSleepWindow(now) && Date.now() > manualWakeUntil;
+
+    if (shouldSleep) {
+      sleepOverlay.classList.add('active');
+      stopSlideshow(); // don't run the photo slideshow while asleep
+      clearTimeout(idleTimer);
+    } else {
+      sleepOverlay.classList.remove('active');
+    }
+
+    let h = now.getHours() % 12; if (h === 0) h = 12;
+    const m = now.getMinutes().toString().padStart(2, '0');
+    const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+    document.getElementById('sleep-clock').textContent = `${h}:${m} ${ampm}`;
+  }
+
+  // tapping the dark screen at night wakes it early for a few minutes
+  sleepOverlay.addEventListener('click', () => {
+    manualWakeUntil = Date.now() + WAKE_GRACE_MS;
+    sleepOverlay.classList.remove('active');
+    resetIdleTimer();
+  });
+
+  checkSleepMode();
+  setInterval(checkSleepMode, 15000); // check every 15 seconds
+
+  // ---------- FAMILY WHITEBOARD ----------
+  const WB_STORAGE_KEY = 'kitchen-hub-whiteboard-notes';
+  const NOTE_COLORS = ['#5C7A68', '#C9A227', '#5B7A96', '#8B6F8C'];
+
+  const wbOverlay = document.getElementById('whiteboard-overlay');
+  const wbGrid = document.getElementById('wb-grid');
+  const notesToggle = document.getElementById('notes-toggle');
+  const notesCount = document.getElementById('notes-count');
+  const wbClose = document.getElementById('wb-close');
+
+  function loadNotes() {
+    try {
+      return JSON.parse(localStorage.getItem(WB_STORAGE_KEY)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveNotes(notes) {
+    localStorage.setItem(WB_STORAGE_KEY, JSON.stringify(notes));
+    updateNotesBadge(notes.length);
+  }
+
+  function updateNotesBadge(count) {
+    notesCount.textContent = count;
+    notesCount.classList.toggle('zero', count === 0);
+  }
+
+  function timeAgoLabel(ts) {
+    const d = new Date(ts);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+      ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function renderNotes() {
+    const notes = loadNotes();
+    wbGrid.innerHTML = '';
+
+    notes.forEach(note => {
+      const card = document.createElement('div');
+      card.className = 'wb-note';
+      card.style.background = note.color;
+
+      const del = document.createElement('button');
+      del.className = 'wb-note-delete';
+      del.textContent = '✕';
+      del.addEventListener('click', () => {
+        const updated = loadNotes().filter(n => n.id !== note.id);
+        saveNotes(updated);
+        renderNotes();
+      });
+      card.appendChild(del);
+
+      const textarea = document.createElement('textarea');
+      textarea.value = note.text;
+      textarea.placeholder = 'Write a note…';
+      textarea.addEventListener('input', () => {
+        const updated = loadNotes();
+        const target = updated.find(n => n.id === note.id);
+        if (target) { target.text = textarea.value; saveNotes(updated); }
+      });
+      card.appendChild(textarea);
+
+      const meta = document.createElement('div');
+      meta.className = 'wb-note-meta';
+      meta.textContent = timeAgoLabel(note.ts);
+      card.appendChild(meta);
+
+      wbGrid.appendChild(card);
+    });
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'wb-add';
+    addBtn.textContent = '+ New Note';
+    addBtn.addEventListener('click', () => {
+      const notesNow = loadNotes();
+      const newNote = {
+        id: Date.now().toString(),
+        text: '',
+        color: NOTE_COLORS[notesNow.length % NOTE_COLORS.length],
+        ts: Date.now(),
+      };
+      notesNow.push(newNote);
+      saveNotes(notesNow);
+      renderNotes();
+      // focus the newly created note so the on-screen keyboard opens
+      const cards = wbGrid.querySelectorAll('textarea');
+      if (cards.length) cards[cards.length - 1].focus();
+    });
+    wbGrid.appendChild(addBtn);
+
+    updateNotesBadge(notes.length);
+  }
+
+  notesToggle.addEventListener('click', () => {
+    wbOverlay.classList.add('active');
+    renderNotes();
+  });
+
+  wbClose.addEventListener('click', () => {
+    wbOverlay.classList.remove('active');
+  });
+
+  updateNotesBadge(loadNotes().length);
+
+  // ---------- VIEW TABS (Home / Cameras) ----------
+  const tabHome = document.getElementById('tab-home');
+  const tabCameras = document.getElementById('tab-cameras');
+  const tabDinner = document.getElementById('tab-dinner');
+  const viewHome = document.getElementById('view-home');
+  const viewCameras = document.getElementById('view-cameras');
+  const viewDinner = document.getElementById('view-dinner');
+
+  function showView(view) {
+    tabHome.classList.toggle('active', view === 'home');
+    tabCameras.classList.toggle('active', view === 'cameras');
+    tabDinner.classList.toggle('active', view === 'dinner');
+    viewHome.classList.toggle('hidden-view', view !== 'home');
+    viewCameras.classList.toggle('active', view === 'cameras');
+    viewDinner.classList.toggle('active', view === 'dinner');
+  }
+
+  tabHome.addEventListener('click', () => showView('home'));
+  tabCameras.addEventListener('click', () => showView('cameras'));
+  tabDinner.addEventListener('click', () => showView('dinner'));
+
+  // ---------- RING CAMERAS (placeholder — swap for real Ring Partner API) ----------
+  // Once the Ring OAuth app is set up (same shape as the Google/Microsoft
+  // integrations), replace these background-images with real snapshot/live
+  // stream URLs pulled from the Ring API, and cam-*-meta with real
+  // "last motion" timestamps from Ring's motion event webhook.
+  document.getElementById('cam-front-feed').style.backgroundImage =
+    "url('https://picsum.photos/id/1076/900/700')";
+  document.getElementById('cam-flood-feed').style.backgroundImage =
+    "url('https://picsum.photos/id/1080/900/700')";
+
+  // ============================================================
+  // GOOGLE CALENDAR — real sign-in
+  // ============================================================
+  // Pulled from CONFIG at the top of this file — see README.md for how
+  // to create your own Google OAuth client ID.
+  const GOOGLE_CLIENT_ID = CONFIG.googleClientId;
+
+  let googleTokenClient = null;
+  let googleAccessToken = null;
+
+  function initGoogleAuth() {
+    if (!window.google || !google.accounts) {
+      // library hasn't loaded yet — try again shortly
+      setTimeout(initGoogleAuth, 300);
+      return;
+    }
+    googleTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/calendar.readonly',
+      callback: async (response) => {
+        if (response.error) {
+          // Silent attempt failed (no prior session/consent) — this is
+          // expected the very first time, or if the browser session
+          // expired. The Connect button remains available for a manual click.
+          console.log('Google silent auth not available yet:', response.error);
+          return;
+        }
+        googleAccessToken = response.access_token;
+        document.getElementById('calendar-connect').textContent = 'Connected';
+        document.getElementById('calendar-connect').classList.add('connected');
+        await loadRealCalendars();
+      },
+    });
+
+    // Try to reconnect silently on every page load — no popup shown.
+    // This only succeeds if you've connected before and the browser still
+    // has a valid Google session; otherwise it fails quietly and the
+    // Connect button just waits for a manual click, same as day one.
+    googleTokenClient.requestAccessToken({ prompt: '' });
+
+    // Google access tokens expire roughly every hour — refresh silently
+    // in the background well before that so the dashboard never goes stale.
+    setInterval(() => {
+      if (googleTokenClient) googleTokenClient.requestAccessToken({ prompt: '' });
+    }, 45 * 60 * 1000); // every 45 minutes
+  }
+  initGoogleAuth();
+
+  document.getElementById('calendar-connect').addEventListener('click', () => {
+    if (googleAccessToken) return; // already connected
+    googleTokenClient.requestAccessToken();
+  });
+
+  async function googleFetch(url) {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${googleAccessToken}` },
+    });
+    if (!res.ok) throw new Error('Google API error: ' + res.status);
+    return res.json();
+  }
+
+  // ---------- FAMILY CALENDAR GROUPS ----------
+  // Defined in the CONFIG block near the top of this file — edit it there,
+  // not here. Each group becomes one column; "matchNames" are checked
+  // against your real Google Calendar names (case-insensitive, partial
+  // match), and a group can merge multiple calendars into one column.
+  const CALENDAR_GROUPS = CONFIG.calendarGroups;
+
+  async function loadRealCalendars() {
+    try {
+      // 1. Get the list of all calendars on the account
+      const listData = await googleFetch(
+        'https://www.googleapis.com/calendar/v3/users/me/calendarList'
+      );
+      const allCalendars = listData.items || [];
+      console.log('All Google calendars found:', allCalendars.map(c => ({
+        summary: c.summary, summaryOverride: c.summaryOverride, id: c.id
+      })));
+
+      // 2. Match each group's expected names against the real calendar list
+      const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999);
+
+      const results = await Promise.all(CALENDAR_GROUPS.map(async (group) => {
+        const matchedCalendars = allCalendars.filter(cal => {
+          // Google's API has two name fields: "summary" (the calendar's
+          // original name) and "summaryOverride" (a custom display name you
+          // set locally, which is what the sidebar actually shows). They can
+          // differ, so check both — plus the calendar ID/email as a last resort.
+          const candidates = [cal.summaryOverride, cal.summary, cal.id]
+            .filter(Boolean)
+            .map(s => s.toLowerCase());
+          return group.matchNames.some(name =>
+            candidates.some(c => c.includes(name.toLowerCase()))
+          );
+        });
+
+        if (matchedCalendars.length === 0) {
+          console.warn(`No calendar found matching "${group.title}" (looked for: ${group.matchNames.join(', ')})`);
+          return { name: group.title, color: group.color, events: [] };
+        }
+
+        // Fetch today's events from every matched calendar in this group,
+        // then merge and sort them into a single timeline for the column.
+        const eventLists = await Promise.all(matchedCalendars.map(async (cal) => {
+          try {
+            const eventsData = await googleFetch(
+              `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events` +
+              `?timeMin=${startOfDay.toISOString()}&timeMax=${endOfDay.toISOString()}` +
+              `&singleEvents=true&orderBy=startTime`
+            );
+            return (eventsData.items || []).map(ev => {
+              const start = ev.start.dateTime || ev.start.date;
+              return {
+                sortKey: new Date(start).getTime(),
+                time: ev.start.dateTime
+                  ? new Date(start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                  : 'All day',
+                name: ev.summary || '(untitled event)',
+              };
+            });
+          } catch (e) {
+            console.error(`Failed to fetch events for ${cal.summary}:`, e);
+            return [];
+          }
+        }));
+
+        const mergedEvents = eventLists.flat().sort((a, b) => a.sortKey - b.sortKey);
+        return { name: group.title, color: group.color, events: mergedEvents };
+      }));
+
+      document.getElementById('calendar-status-label').textContent = '6 Family Members';
+      renderCalendars(results);
+    } catch (e) {
+      console.error('Failed to load real calendars:', e);
+    }
+  }
+
+  // ============================================================
+  // MICROSOFT TO DO — real sign-in
+  // ============================================================
+  // Pulled from CONFIG at the top of this file — see README.md for how
+  // to create your own Microsoft (Entra) app registration.
+  const MS_CLIENT_ID = CONFIG.microsoftClientId;
+  // Tasks.Read for the grocery list, Files.Read for the OneDrive photo slideshow
+  const MS_SCOPES = ['Tasks.Read', 'Files.Read'];
+
+  let msalInstance = null;
+
+  // MSAL v3 requires initialize() to be called and awaited before any other
+  // MSAL API is used. This promise lets the Connect button wait for that to
+  // finish, even if you click before it's done.
+  const msalReady = (async () => {
+    try {
+      if (typeof msal === 'undefined') throw new Error('MSAL library failed to load');
+      msalInstance = new msal.PublicClientApplication({
+        auth: {
+          clientId: MS_CLIENT_ID,
+          authority: `https://login.microsoftonline.com/${CONFIG.microsoftTenantId}`,
+          redirectUri: window.location.origin,
+        },
+        cache: {
+          // localStorage (rather than the default sessionStorage) survives
+          // page reloads and browser restarts, which is what lets this
+          // dashboard reconnect silently instead of asking you to sign in
+          // again every day.
+          cacheLocation: 'localStorage',
+        },
+      });
+
+      await msalInstance.initialize();
+
+      // On page load, check whether we already have a signed-in account from
+      // a previous session. If so, try to get a fresh token silently —
+      // no popup, no click needed.
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        msalInstance.setActiveAccount(accounts[0]);
+        try {
+          await msalInstance.acquireTokenSilent({ scopes: MS_SCOPES, account: accounts[0] });
+          const connectBtn = document.getElementById('grocery-connect');
+          connectBtn.textContent = 'Connected';
+          connectBtn.classList.add('connected');
+          await loadRealGroceryList();
+          await loadHomeProjectsList();
+          await loadOneDrivePhotos();
+        } catch (e) {
+          // Silent refresh failed (session fully expired, revoked, etc.) —
+          // the Connect button just waits for a manual click again, same
+          // as the very first time.
+          console.log('Microsoft silent refresh failed:', e);
+        }
+      }
+
+      // Keep the Microsoft token fresh in the background too, same idea as Google.
+      setInterval(async () => {
+        const account = msalInstance.getActiveAccount();
+        if (!account) return;
+        try {
+          await msalInstance.acquireTokenSilent({ scopes: MS_SCOPES, account });
+        } catch (e) {
+          console.log('Microsoft background token refresh failed:', e);
+        }
+      }, 45 * 60 * 1000); // every 45 minutes
+    } catch (e) {
+      console.error('MSAL init failed:', e);
+    }
+  })();
+
+  document.getElementById('grocery-connect').addEventListener('click', async () => {
+    const connectBtn = document.getElementById('grocery-connect');
+    const statusEl = document.getElementById('grocery-status');
+    if (connectBtn.classList.contains('connected')) return;
+
+    statusEl.textContent = 'Loading sign-in…';
+    await msalReady; // make sure initialize() has finished before doing anything else
+
+    if (!msalInstance) {
+      statusEl.textContent = 'Sign-in library failed to load — reload the page';
+      return;
+    }
+
+    try {
+      statusEl.textContent = 'Signing in…';
+      const loginResponse = await msalInstance.loginPopup({ scopes: MS_SCOPES });
+      msalInstance.setActiveAccount(loginResponse.account);
+
+      connectBtn.textContent = 'Connected';
+      connectBtn.classList.add('connected');
+      statusEl.textContent = '';
+      await loadRealGroceryList();
+      await loadHomeProjectsList();
+      await loadOneDrivePhotos();
+    } catch (e) {
+      console.error('Microsoft sign-in error:', e);
+      statusEl.textContent = 'Error: ' + (e.errorMessage || e.message || 'sign-in failed');
+    }
+  });
+
+  async function msGraphFetch(url) {
+    const account = msalInstance.getActiveAccount();
+    console.log('Microsoft account being used:', account ? account.username : 'NONE — not signed in');
+    const tokenResponse = await msalInstance.acquireTokenSilent({
+      scopes: MS_SCOPES,
+      account,
+    });
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${tokenResponse.accessToken}` },
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`Graph API error ${res.status} for ${url}:`, body);
+      throw new Error('Graph API error: ' + res.status);
+    }
+    return res.json();
+  }
+
+  // ---------- ONEDRIVE PHOTOS (for the idle slideshow) ----------
+  // Looks for a OneDrive folder with this name (set in CONFIG above) and
+  // uses whatever image files are inside it for the slideshow.
+  const ONEDRIVE_PHOTO_FOLDER = CONFIG.oneDrivePhotoFolder;
+
+  async function loadOneDrivePhotos() {
+    try {
+      const data = await msGraphFetch(
+        `https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURIComponent(ONEDRIVE_PHOTO_FOLDER)}:/children`
+      );
+      const imageItems = (data.value || []).filter(item => item.file &&
+        item.file.mimeType && item.file.mimeType.startsWith('image/'));
+
+      if (imageItems.length === 0) {
+        console.log('No images found in OneDrive folder:', ONEDRIVE_PHOTO_FOLDER);
+        return;
+      }
+
+      // @microsoft.graph.downloadUrl is a pre-authenticated direct link —
+      // usable straight in a background-image, no auth header needed.
+      const photoUrls = imageItems.map(item => item['@microsoft.graph.downloadUrl']);
+      slideshowPhotos = photoUrls;
+      buildSlides(slideshowPhotos);
+    } catch (e) {
+      console.error('Failed to load OneDrive photos:', e);
+    }
+  }
+
+  // Reusable — fetches one To Do list by (fuzzy) name match, filters out
+  // completed items, and renders it into the given <ul> element.
+  async function loadToDoList(matchSubstrings, listEl, statusEl, fallbackTitleEl) {
+    try {
+      // Using the delta endpoint here instead of the plain /me/todo/lists —
+      // the regular endpoint has a known bug for some accounts where it only
+      // returns a single system list ("Flagged Emails"). The delta variant
+      // correctly returns everything.
+      const listsData = await msGraphFetch('https://graph.microsoft.com/v1.0/me/todo/lists/microsoft.graph.delta()');
+      const lists = listsData.value || [];
+      console.log(`All To Do lists found (${lists.length}):`, lists.map(l => l.displayName));
+      // Exact match (case/whitespace-insensitive) — not "includes" — so a
+      // list like "Errands / Groceries" won't accidentally match "Groceries"
+      const meta = lists.find(l =>
+        matchSubstrings.some(m => l.displayName.trim().toLowerCase() === m.toLowerCase())
+      );
+
+      if (!meta) {
+        if (statusEl) statusEl.textContent = `No list found matching: ${matchSubstrings.join(', ')}`;
+        return;
+      }
+
+      if (fallbackTitleEl) fallbackTitleEl.textContent = meta.displayName;
+      if (statusEl) statusEl.textContent = '';
+
+      const tasksData = await msGraphFetch(
+        `https://graph.microsoft.com/v1.0/me/todo/lists/${meta.id}/tasks`
+      );
+
+      // Show items that aren't completed AND are either due today/overdue,
+      // OR have no due date set at all (only future-dated items are hidden).
+      const todayStr = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+      function isNotFutureDue(t) {
+        if (!t.dueDateTime || !t.dueDateTime.dateTime) return true;
+        const dueDateStr = t.dueDateTime.dateTime.slice(0, 10);
+        return dueDateStr <= todayStr;
+      }
+
+      const tasks = (tasksData.value || [])
+        .filter(t => t.status !== 'completed' && isNotFutureDue(t))
+        .map(t => ({ id: t.id, text: t.title, checked: false }));
+
+      renderListItems(listEl, tasks);
+    } catch (e) {
+      console.error('Failed to load To Do list:', e);
+      if (statusEl) statusEl.textContent = 'Could not load list';
+    }
+  }
+
+  async function loadRealGroceryList() {
+    await loadToDoList(['Groceries', 'grocer'], groceryList, document.getElementById('grocery-status'), document.getElementById('grocery-list-title'));
+  }
+
+  async function loadHomeProjectsList() {
+    await loadToDoList(['home to do', 'home todo'], homeProjectsList, document.getElementById('home-projects-status'), null);
+  }
+
+  // ============================================================
+  // SETTINGS PANEL (⚙ Settings) — friendly UI over CONFIG, no code editing
+  // ============================================================
+  const settingsOverlay = document.getElementById('settings-overlay');
+  const settingsToggle = document.getElementById('settings-toggle');
+  const settingsClose = document.getElementById('settings-close');
+  const calendarRowsEl = document.getElementById('set-calendar-rows');
+  const sportsRowsEl = document.getElementById('set-sports-rows');
+
+  // Tracks the city/coordinates chosen via the "Find" geocode lookup,
+  // since latitude/longitude aren't things people type in by hand.
+  let settingsCityDraft = { city: CONFIG.city, latitude: CONFIG.latitude, longitude: CONFIG.longitude };
+
+  function leagueKeyFromSportPath(sportPath) {
+    for (const key of Object.keys(TEAM_DATABASE)) {
+      if (TEAM_DATABASE[key].sportPath === sportPath) return key;
+    }
+    return 'mlb';
+  }
+
+  function buildLeagueOptionsHtml(selectedKey) {
+    return Object.keys(TEAM_DATABASE).map(key =>
+      `<option value="${key}"${key === selectedKey ? ' selected' : ''}>${TEAM_DATABASE[key].label}</option>`
+    ).join('');
+  }
+
+  function buildTeamOptionsHtml(leagueKey, selectedAbbr) {
+    return TEAM_DATABASE[leagueKey].teams.map(t =>
+      `<option value="${t.abbr}"${t.abbr === selectedAbbr ? ' selected' : ''}>${t.label}</option>`
+    ).join('');
+  }
+
+  function addCalendarRow(data) {
+    const d = data || { title: '', color: CAL_COLOR_OPTIONS[calendarRowsEl.children.length % CAL_COLOR_OPTIONS.length].value, matchNames: [] };
+    const row = document.createElement('div');
+    row.className = 'settings-row';
+    const colorOptionsHtml = CAL_COLOR_OPTIONS.map(c =>
+      `<option value="${c.value}"${c.value === d.color ? ' selected' : ''}>${c.label}</option>`
+    ).join('');
+    row.innerHTML = `
+      <input type="text" class="settings-input cal-name" placeholder="Name" value="${(d.title || '').replace(/"/g, '&quot;')}">
+      <select class="settings-select cal-color">${colorOptionsHtml}</select>
+      <input type="text" class="settings-input cal-match" placeholder="Match names/emails, comma separated" value="${(d.matchNames || []).join(', ').replace(/"/g, '&quot;')}">
+      <button type="button" class="settings-row-remove">✕</button>`;
+    row.querySelector('.settings-row-remove').addEventListener('click', () => row.remove());
+    calendarRowsEl.appendChild(row);
+  }
+
+  function addSportsRow(data) {
+    const leagueKey = data ? leagueKeyFromSportPath(data.sportPath) : 'mlb';
+    const abbr = data ? data.abbr : TEAM_DATABASE.mlb.teams[0].abbr;
+    const row = document.createElement('div');
+    row.className = 'settings-row two-field';
+    row.innerHTML = `
+      <select class="settings-select sport-league">${buildLeagueOptionsHtml(leagueKey)}</select>
+      <select class="settings-select sport-team">${buildTeamOptionsHtml(leagueKey, abbr)}</select>
+      <button type="button" class="settings-row-remove">✕</button>`;
+    const leagueSelect = row.querySelector('.sport-league');
+    const teamSelect = row.querySelector('.sport-team');
+    leagueSelect.addEventListener('change', () => {
+      teamSelect.innerHTML = buildTeamOptionsHtml(leagueSelect.value, null);
+    });
+    row.querySelector('.settings-row-remove').addEventListener('click', () => row.remove());
+    sportsRowsEl.appendChild(row);
+  }
+
+  function populateSettingsForm() {
+    document.getElementById('set-household-name').value = CONFIG.householdName;
+    document.getElementById('set-city-search').value = CONFIG.city;
+    settingsCityDraft = { city: CONFIG.city, latitude: CONFIG.latitude, longitude: CONFIG.longitude };
+    document.getElementById('set-city-result').textContent =
+      `Currently set to ${CONFIG.city} (${CONFIG.latitude}, ${CONFIG.longitude}). Type a new city and click Find to change it.`;
+
+    calendarRowsEl.innerHTML = '';
+    (CONFIG.calendarGroups.length ? CONFIG.calendarGroups : [null]).forEach(g => addCalendarRow(g));
+
+    document.getElementById('set-sports-title').value = CONFIG.sportsPanelTitle || 'My Teams';
+    sportsRowsEl.innerHTML = '';
+    CONFIG.sportsTeams.forEach(t => addSportsRow(t));
+
+    document.getElementById('set-dinner-url').value = CONFIG.dinnerPlannerUrl || '';
+    document.getElementById('set-show-cameras').checked = CONFIG.showCamerasTab !== false;
+    document.getElementById('set-onedrive-folder').value = CONFIG.oneDrivePhotoFolder || '';
+    document.getElementById('set-google-client-id').value = CONFIG.googleClientId || '';
+    document.getElementById('set-ms-client-id').value = CONFIG.microsoftClientId || '';
+    document.getElementById('set-ms-tenant-id').value = CONFIG.microsoftTenantId || 'common';
+  }
+
+  settingsToggle.addEventListener('click', () => {
+    populateSettingsForm();
+    settingsOverlay.classList.add('active');
+  });
+  settingsClose.addEventListener('click', () => {
+    settingsOverlay.classList.remove('active');
+  });
+
+  document.getElementById('set-calendar-add').addEventListener('click', () => addCalendarRow(null));
+  document.getElementById('set-sports-add').addEventListener('click', () => addSportsRow(null));
+
+  document.getElementById('set-city-find').addEventListener('click', async () => {
+    const resultEl = document.getElementById('set-city-result');
+    const query = document.getElementById('set-city-search').value.trim();
+    if (!query) { resultEl.textContent = 'Type a city name first.'; return; }
+    resultEl.textContent = 'Searching…';
+    try {
+      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?count=1&name=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      const match = (data.results || [])[0];
+      if (!match) { resultEl.textContent = `Couldn't find "${query}" — try a different spelling.`; return; }
+      const label = match.admin1 ? `${match.name}, ${match.admin1}` : `${match.name}, ${match.country}`;
+      settingsCityDraft = { city: label, latitude: match.latitude, longitude: match.longitude };
+      document.getElementById('set-city-search').value = label;
+      resultEl.textContent = `Found: ${label} (${match.latitude}, ${match.longitude})`;
+    } catch (e) {
+      resultEl.textContent = 'Lookup failed — check your internet connection and try again.';
+    }
+  });
+
+  document.getElementById('set-reset').addEventListener('click', () => {
+    if (!confirm('Reset all settings back to the built-in defaults? This clears everything you configured here.')) return;
+    localStorage.removeItem(SETTINGS_KEY);
+    location.reload();
+  });
+
+  document.getElementById('set-save').addEventListener('click', () => {
+    const calendarGroups = Array.from(calendarRowsEl.children).map(row => ({
+      title: row.querySelector('.cal-name').value.trim() || 'Untitled',
+      color: row.querySelector('.cal-color').value,
+      matchNames: row.querySelector('.cal-match').value.split(',').map(s => s.trim()).filter(Boolean),
+    }));
+
+    const sportsTeams = Array.from(sportsRowsEl.children).map(row => {
+      const leagueKey = row.querySelector('.sport-league').value;
+      const abbr = row.querySelector('.sport-team').value;
+      const team = TEAM_DATABASE[leagueKey].teams.find(t => t.abbr === abbr);
+      return { label: team ? team.label : abbr, abbr, sportPath: TEAM_DATABASE[leagueKey].sportPath };
+    });
+
+    const settings = {
+      householdName: document.getElementById('set-household-name').value.trim() || 'Family',
+      city: settingsCityDraft.city,
+      latitude: settingsCityDraft.latitude,
+      longitude: settingsCityDraft.longitude,
+      calendarGroups,
+      sportsTeams,
+      sportsPanelTitle: document.getElementById('set-sports-title').value.trim() || 'My Teams',
+      dinnerPlannerUrl: document.getElementById('set-dinner-url').value.trim(),
+      showCamerasTab: document.getElementById('set-show-cameras').checked,
+      oneDrivePhotoFolder: document.getElementById('set-onedrive-folder').value.trim() || 'Kitchen Hub Photos',
+      googleClientId: document.getElementById('set-google-client-id').value.trim(),
+      microsoftClientId: document.getElementById('set-ms-client-id').value.trim(),
+      microsoftTenantId: document.getElementById('set-ms-tenant-id').value.trim() || 'common',
+    };
+
+    saveConfig(settings);
+    document.getElementById('set-save').textContent = 'Saved — reloading…';
+    setTimeout(() => location.reload(), 400);
+  });
+</script>
+
+</body>
+</html>
